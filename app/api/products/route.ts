@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Используем let, чтобы массив можно было изменять (временно, до БД)
 let products = [
   { id: 1, name: "Noir Coat", price: "$30", image: "https://lotus-botique.vercel.app/i3.jpg", type: "vertical" },
   { id: 2, name: "Silk Scarf", price: "$45", image: "https://lotus-botique.vercel.app/i.jpg", type: "horizontal" },
@@ -16,17 +15,27 @@ let products = [
   { id: 12, name: "Essence Perfume", price: "$35", image: "https://lotus-botique.vercel.app/i.jpg", type: "horizontal" },
 ];
 
+// Общие заголовки для всех ответов
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// --- OPTIONS: Предварительная проверка браузера ---
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 // --- GET: Получить все товары ---
 export async function GET() {
-  return NextResponse.json(products);
+  return NextResponse.json(products, { headers: corsHeaders });
 }
 
 // --- POST: Создать новый товар ---
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-
-    // Генерируем новый ID (максимальный существующий + 1)
     const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
 
     const newProduct = {
@@ -38,29 +47,28 @@ export async function POST(request: NextRequest) {
     };
 
     products.push(newProduct);
-
-    return NextResponse.json(newProduct, { status: 201 });
+    return NextResponse.json(newProduct, { status: 201, headers: corsHeaders });
   } catch (error) {
-    return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
+    return NextResponse.json({ message: "Invalid request body" }, { status: 400, headers: corsHeaders });
   }
 }
 
-// --- DELETE: Очистить весь список (массовое действие) ---
+// --- DELETE: Очистить весь список ---
 export async function DELETE() {
   products = [];
-  return NextResponse.json({ message: "All products deleted" });
+  return NextResponse.json({ message: "All products deleted" }, { headers: corsHeaders });
 }
 
 // --- PUT: Заменить весь список товаров ---
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json(); // Ожидаем массив новых товаров
+    const body = await request.json();
     if (!Array.isArray(body)) {
-      return NextResponse.json({ message: "Payload must be an array" }, { status: 400 });
+      return NextResponse.json({ message: "Payload must be an array" }, { status: 400, headers: corsHeaders });
     }
     products = body;
-    return NextResponse.json(products);
+    return NextResponse.json(products, { headers: corsHeaders });
   } catch (error) {
-    return NextResponse.json({ message: "Error updating products" }, { status: 500 });
+    return NextResponse.json({ message: "Error updating products" }, { status: 500, headers: corsHeaders });
   }
 }
